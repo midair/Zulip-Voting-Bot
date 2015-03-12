@@ -248,7 +248,7 @@ def main():
 
     subscribed_streams = []
 
-    new_bot = bot(zulip_username, zulip_api_key, key_word, subscribed_streams)
+    new_bot = Bot(zulip_username, zulip_api_key, key_word, subscribed_streams)
     new_bot.main()
 
 if __name__ == '__main__':
