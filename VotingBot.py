@@ -2,6 +2,8 @@ import zulip
 import json
 import requests
 import random
+import re
+import pprint
 
 
 class bot():
@@ -53,10 +55,11 @@ class bot():
         ''' checks msg against key_word. If key_word is in msg, gets a gif url,
             picks a caption, and calls send_message()
         '''
-        content = msg['content'].lower()
-        if self.key_word in content:
+        content = msg['content'].split()[0].lower().strip()
+        if self.key_word == content:
             self.parse_public_message(msg)
-        elif msg["type"] == "private":
+
+        elif msg["type"] == "private" and msg["sender_email"] != self.username:
             self.parse_private_message(msg)
                
 
@@ -74,13 +77,15 @@ class bot():
         msg_content = msg["content"].lower()
         title = msg_content.split("\n")[0].split()[1:]
         title = " ".join(title)
-        if title in self.voting_topics.keys():
+        if title == "help":
+            self.send_help(msg)
+        elif title in self.voting_topics.keys():
             split_msg = msg_content.split("\n")
             if len(split_msg) == 2:
                 keyword = split_msg[1]
-                regex = re.compile("[0-9]")
-                if keyword == "results":
-                   self.send_results(msg)
+                regex = re.compile("[0-9]+")
+                if keyword.lower().strip() == "results":
+                    self.send_results(msg)
                 elif regex.match(keyword):
                     self.add_vote(title.lower(),msg)
                 else:
@@ -92,8 +97,8 @@ class bot():
 
     def parse_private_message(self, msg):
         msg_content = msg["content"].lower()
-        title = msg_content.split("\n")
-        if title in self.voting_topics.keys():
+        title = msg_content.split("\n")[0]
+        if title.strip() in self.voting_topics.keys():
             split_msg = msg_content.split("\n")
             if len(split_msg) == 2:
                 regex = re.compile("[0-9]+")
@@ -102,54 +107,129 @@ class bot():
                     optionNumber = int(optionNumber)
                     self.add_vote(title.lower(), optionNumber,msg)
                 else:
+                    print "regex did not match"
                     self.send_voting_help(msg)
             else:
                 self.post_error(msg)
         else:
+            print "title not in keys" + title
+            pprint.pprint(self.voting_topics)
             self.send_voting_help(msg)
 
 
     def new_voting_topic(self, msg):
         msg_content = msg["content"]
         title = msg_content.split("\n")[0].split()[1:]
-        title = " ".join(title)
+        title = " ".join(title).strip()
         if title:
             msg["content"] = title
             options = msg_content.split("\n")[1:]
             options_dict = {}
             for x in range(len(options)):
                 options_dict[x] = [options[x], 0]
-                msg["content"] += "\n " +x +". " + options[x]
+                msg["content"] += "\n " +str(x) +". " + options[x]
 
-            self.voting_topics = {title.lower():{"title":title, "options":options_dict, "msg":msg, "people_who_have_voted": []}}
+            self.voting_topics[title.lower().strip()] = {"title":title,
+                                                         "options":options_dict,
+                                                         "people_who_have_voted": []}
 
             self.send_message(msg)
         else:
             self.send_help(msg)
 
     def add_vote(self, title, optionNumber, msg):
-        vote = self.voting_topics[title]
-        vote["options"][optionNumber][1] += 1
-        msg["content"] = "One vote in this topic: " + vote["title"] + " for this option: " + vote["options"][optionNumber][0]
+        vote = self.voting_topics[title.strip()]
+        if optionNumber in vote["options"].keys():
+            vote["options"][optionNumber][1] += 1
+            msg["content"] = "One vote in this topic: " + vote["title"] + " for this option: " + vote["options"][optionNumber][0]
+        else:
+            msg["content"] = "That option is not in the range of the voting options. Here are your options: \n" + \
+                             "\n".join([str(num) + ". "+ option[0] for num, option in vote["options"].items()])
         self.send_message(msg)
 
+
     def send_help(self, msg):
-        msg["content"] = '''You look like you need some VotingBot tips!'''
+        msg["content"] = '''You look like you need some voting tips!
+Here is how to make a new vote:
+VotingBot Title of Vote
+Voting Option 1
+Voting Option 2
+Voting Option 3
+etc.
+
+eg.
+VotingBot Which movie?
+Hackers
+The Matrix
+Star Wars
+
+Then to vote for an option:
+private message voting bot saying:
+Title of Vote
+Integer_#_of_selected_option
+
+eg.
+Which movie?
+2 \n
+or public message:
+VotingBot Title of Vote
+Integer_#_of_selected_option \n
+eg.
+VotingBot Which movie?
+2 \n
+Then to close a poll:
+public message:
+VotingBot Title of Vote
+results \n
+eg.
+VotingBot Which movie?
+results \n
+Good luck and have fun!```
+
+                            '''
         self.send_message(msg)
 
     def send_voting_help(self, msg):
-        msg["content"] = '''You look like you need some VotingBot tips on how to vote!'''
+        msg["content"] = '''You look like you need some tips on how to vote!
+To vote for an option:
+private message voting bot saying:
+Title of Vote
+Integer_#_of_selected_option \n
+eg.
+Which movie?
+2 \n
+or public message:
+VotingBot Title of Vote
+Integer_#_of_selected_option \n
+eg.
+VotingBot Which movie?
+2
+                            '''
         self.send_message(msg)
 
 
     def post_error(self, msg):
         return
 
+    def send_results(self, msg):
+        msg_content = msg["content"].lower()
+        title = msg_content.split("\n")[0].split()[1:]
+        title = " ".join(title).strip()
+        if title in self.voting_topics.keys():
+            vote = self.voting_topics[title]
+            results = "The results are in!!!! \n" + vote["title"]
+            for option in vote["options"].values():
+                results += "\n{0} has {1} votes.".format(option[0], str(option[1]))
+            msg["content"] = results
+            self.send_message(msg)
+            del self.voting_topics[title]
+
 
     def main(self):
         ''' Blocking call that runs forever. Calls self.respond() on every message received.
         '''
         self.client.call_on_each_message(lambda msg: self.respond(msg))
+        print msg
 
 
 
