@@ -167,9 +167,12 @@ class Bot():
         vote = self.voting_topics[title.strip()]
 
         if optionNumber in vote["options"].keys():
-            vote["options"][optionNumber][1] += 1
-            msg["content"] = self._get_add_vote_msg(msg, vote, optionNumber)
-
+            if msg["sender_email"] not in vote["people_who_have_voted"]:
+                vote["options"][optionNumber][1] += 1
+                vote["people_who_have_voted"].append(msg["sender_email"])
+                msg["content"] = self._get_add_vote_msg(msg, vote, optionNumber)
+            else:
+                msg["content"] = "YOU ALREADY VOTED ONCE!"
         else:
             msg["content"] = "That option is not in the range of the voting options. Here are your options: \n" + \
                              "\n".join([str(num) + ". " + option[0]
