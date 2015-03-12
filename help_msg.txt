@@ -1,0 +1,48 @@
+You look like you need some voting tips!
+
+Here is how to make a new vote:
+-------------------------------
+VotingBot Title of Vote
+Voting Option 1
+Voting Option 2
+Voting Option 3
+etc.
+
+eg.
+VotingBot Which movie?
+Hackers
+The Matrix
+Star Wars
+
+
+Then to vote for an option:
+---------------------------
+private message voting bot saying:
+Title of Vote
+Integer_#_of_selected_option
+
+eg.
+Which movie?
+2
+
+or public message:
+VotingBot Title of Vote
+Integer_#_of_selected_option
+
+eg.
+VotingBot Which movie?
+2
+
+
+Then to close a poll:
+---------------------
+public message:
+VotingBot Title of Vote
+results
+
+eg.
+VotingBot Which movie?
+results
+_______________________
+Good luck and have fun!
+-----------------------

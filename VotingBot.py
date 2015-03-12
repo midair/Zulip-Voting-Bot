@@ -7,10 +7,12 @@ import pprint
 
 
 class bot():
+
     ''' bot takes a zulip username and api key, a word or phrase to respond to, a search string for giphy,
         an optional caption or list of captions, and a list of the zulip streams it should be active in.
         it then posts a caption and a randomly selected gif in response to zulip messages.
      '''
+
     def __init__(self, zulip_username, zulip_api_key, key_word, subscribed_streams=[]):
         self.username = zulip_username
         self.api_key = zulip_api_key
@@ -20,23 +22,23 @@ class bot():
         self.subscriptions = self.subscribe_to_streams()
         self.voting_topics = {}
 
-
     @property
     def streams(self):
         ''' Standardizes a list of streams in the form [{'name': stream}]
         '''
         if not self.subscribed_streams:
-            streams = [{'name': stream['name']} for stream in self.get_all_zulip_streams()]
+            streams = [{'name': stream['name']}
+                       for stream in self.get_all_zulip_streams()]
             return streams
         else:
             streams = [{'name': stream} for stream in self.subscribed_streams]
             return streams
 
-
     def get_all_zulip_streams(self):
         ''' Call Zulip API to get a list of all streams
         '''
-        response = requests.get('https://api.zulip.com/v1/streams', auth=(self.username, self.api_key))
+        response = requests.get(
+            'https://api.zulip.com/v1/streams', auth=(self.username, self.api_key))
         if response.status_code == 200:
             return response.json()['streams']
         elif response.status_code == 401:
@@ -44,12 +46,10 @@ class bot():
         else:
             raise RuntimeError(':( we failed to GET streams.\n(%s)' % response)
 
-
     def subscribe_to_streams(self):
         ''' Subscribes to zulip streams
         '''
         self.client.add_subscriptions(self.streams)
-
 
     def respond(self, msg):
         ''' checks msg against key_word. If key_word is in msg, gets a gif url,
@@ -61,7 +61,6 @@ class bot():
 
         elif msg["type"] == "private" and msg["sender_email"] != self.username:
             self.parse_private_message(msg)
-               
 
     def send_message(self, msg):
         ''' Sends a message to zulip stream
@@ -87,7 +86,7 @@ class bot():
                 if keyword.lower().strip() == "results":
                     self.send_results(msg)
                 elif regex.match(keyword):
-                    self.add_vote(title.lower(),msg)
+                    self.add_vote(title.lower(), msg)
                 else:
                     self.send_help(msg)
             else:
@@ -105,7 +104,7 @@ class bot():
                 optionNumber = split_msg[1].split(" ")[0]
                 if regex.match(optionNumber):
                     optionNumber = int(optionNumber)
-                    self.add_vote(title.lower(), optionNumber,msg)
+                    self.add_vote(title.lower(), optionNumber, msg)
                 else:
                     print "regex did not match"
                     self.send_voting_help(msg)
@@ -115,7 +114,6 @@ class bot():
             print "title not in keys" + title
             pprint.pprint(self.voting_topics)
             self.send_voting_help(msg)
-
 
     def new_voting_topic(self, msg):
         msg_content = msg["content"]
@@ -127,10 +125,10 @@ class bot():
             options_dict = {}
             for x in range(len(options)):
                 options_dict[x] = [options[x], 0]
-                msg["content"] += "\n " +str(x) +". " + options[x]
+                msg["content"] += "\n " + str(x) + ". " + options[x]
 
-            self.voting_topics[title.lower().strip()] = {"title":title,
-                                                         "options":options_dict,
+            self.voting_topics[title.lower().strip()] = {"title": title,
+                                                         "options": options_dict,
                                                          "people_who_have_voted": []}
 
             self.send_message(msg)
@@ -141,72 +139,23 @@ class bot():
         vote = self.voting_topics[title.strip()]
         if optionNumber in vote["options"].keys():
             vote["options"][optionNumber][1] += 1
-            msg["content"] = "One vote in this topic: " + vote["title"] + " for this option: " + vote["options"][optionNumber][0]
+            msg["content"] = "One vote in this topic: " + vote["title"] + \
+                " for this option: " + vote["options"][optionNumber][0]
         else:
             msg["content"] = "That option is not in the range of the voting options. Here are your options: \n" + \
-                             "\n".join([str(num) + ". "+ option[0] for num, option in vote["options"].items()])
+                             "\n".join([str(num) + ". " + option[0]
+                                        for num, option in vote["options"].items()])
         self.send_message(msg)
 
-
     def send_help(self, msg):
-        msg["content"] = '''You look like you need some voting tips!
-Here is how to make a new vote:
-VotingBot Title of Vote
-Voting Option 1
-Voting Option 2
-Voting Option 3
-etc.
-
-eg.
-VotingBot Which movie?
-Hackers
-The Matrix
-Star Wars
-
-Then to vote for an option:
-private message voting bot saying:
-Title of Vote
-Integer_#_of_selected_option
-
-eg.
-Which movie?
-2 \n
-or public message:
-VotingBot Title of Vote
-Integer_#_of_selected_option \n
-eg.
-VotingBot Which movie?
-2 \n
-Then to close a poll:
-public message:
-VotingBot Title of Vote
-results \n
-eg.
-VotingBot Which movie?
-results \n
-Good luck and have fun!```
-
-                            '''
+        with open("voting_help_msg.txt") as f:
+            msg["content"] = f.read()
         self.send_message(msg)
 
     def send_voting_help(self, msg):
-        msg["content"] = '''You look like you need some tips on how to vote!
-To vote for an option:
-private message voting bot saying:
-Title of Vote
-Integer_#_of_selected_option \n
-eg.
-Which movie?
-2 \n
-or public message:
-VotingBot Title of Vote
-Integer_#_of_selected_option \n
-eg.
-VotingBot Which movie?
-2
-                            '''
+        with open("help_msg.txt") as f:
+            msg["content"] = f.read()
         self.send_message(msg)
-
 
     def post_error(self, msg):
         return
@@ -219,11 +168,11 @@ VotingBot Which movie?
             vote = self.voting_topics[title]
             results = "The results are in!!!! \n" + vote["title"]
             for option in vote["options"].values():
-                results += "\n{0} has {1} votes.".format(option[0], str(option[1]))
+                results += "\n{0} has {1} votes.".format(
+                    option[0], str(option[1]))
             msg["content"] = results
             self.send_message(msg)
             del self.voting_topics[title]
-
 
     def main(self):
         ''' Blocking call that runs forever. Calls self.respond() on every message received.
@@ -232,16 +181,15 @@ VotingBot Which movie?
         print msg
 
 
-
 ''' The Customization Part!
-    
+
     Create a zulip bot under "settings" on zulip.
     Zulip will give you a username and API key
-    key_word is the text in Zulip you would like the bot to respond to. This may be a 
+    key_word is the text in Zulip you would like the bot to respond to. This may be a
         single word or a phrase.
     search_string is what you want the bot to search giphy for.
     caption may be one of: [] OR 'a single string' OR ['or a list', 'of strings']
-    subscribed_streams is a list of the streams the bot should be active on. An empty 
+    subscribed_streams is a list of the streams the bot should be active on. An empty
         list defaults to ALL zulip streams
 
 '''
@@ -250,7 +198,7 @@ zulip_username = 'zulip_newbie_bot-bot@students.hackerschool.com'
 zulip_api_key = 'w9r2FyGMYrWaueeoooLC8qEmarIZvNT2'
 key_word = 'VotingBot'
 
-subscribed_streams = [] 
+subscribed_streams = []
 
 new_bot = bot(zulip_username, zulip_api_key, key_word, subscribed_streams)
 new_bot.main()
