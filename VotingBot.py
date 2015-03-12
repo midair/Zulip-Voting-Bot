@@ -3,11 +3,13 @@
 import zulip
 import sys
 
-# Keyword arguments 'email' and 'api_key' are not required if you are using ~/.zuliprc
+# Keyword arguments 'email' and 'api_key' are not required if you are
+# using ~/.zuliprc
 client = zulip.Client(email="othello-bot@example.com",
                       api_key="a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5")
 
-voting_topics = []
+voting_topics = {}
+
 
 def parseMessage(msg):
     msg_content = msg["content"].lower()
@@ -18,7 +20,7 @@ def parseMessage(msg):
             keyword = split_msg[1]
             regex = re.compile("[0-9]")
             if keyword == "results":
-               sendResults(msg)
+                sendResults(msg)
             elif regex.match(keyword):
                 addVote(msg)
             else:
@@ -34,26 +36,25 @@ def sendResults(msg):
         }
     )
 
+
 def addVote(msg):
     return
 
+
 def sendHelp(msg):
     return
+
 
 def newVotingTopic(msg):
     global voting_topics
     title = msg.split(":")[0]
     msg_without_title = ":".join(msg.split(":")[1:])
-    options =  re.compile("[0-9]\.?\s?").split(msg_without_title)
+    options = re.compile("[0-9]\.?\s?").split(msg_without_title)
     options_dict = {}
     for option in options:
         options_dict[option] = 0
 
-    voting_topics = {title:options_dict}
-
-
-
-
+    voting_topics = {title: options_dict}
 
 
 # Send a stream message
