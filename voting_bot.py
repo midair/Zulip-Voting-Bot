@@ -89,14 +89,13 @@ class Bot():
             -add_voting_option
         '''
 
-        msg_content = msg["content"].lower()
-        title = self._parse_title(msg_content)
+        title = self._parse_title(msg)
 
-        if title == "help":
+        if title.lower() == "help":
             self.send_help(msg)
 
-        elif title in self.voting_topics.keys():
-            split_msg = msg_content.split("\n")
+        elif title.lower() in self.voting_topics.keys():
+            split_msg = msg["content"].split("\n")
 
             if len(split_msg) == 2:
                 keyword = split_msg[1]
@@ -120,8 +119,8 @@ class Bot():
         else:
             self.new_voting_topic(msg)
 
-    def _parse_title(self, msg_content):
-        title = msg_content.split("\n")[0].split()[1:]
+    def _parse_title(self, msg):
+        title = msg["content"].split("\n")[0].split()[1:]
         return " ".join(title)
 
     def parse_private_message(self, msg):
@@ -183,7 +182,7 @@ class Bot():
 
     def add_voting_option(self, msg, title, new_voting_option):
         '''Add a new voting option to an existing voting topic.'''
-        print new_voting_option
+
         if title.lower().strip() in self.voting_topics:
             vote = self.voting_topics[title.lower().strip()]
             options = vote["options"]
@@ -191,11 +190,10 @@ class Bot():
             if self._not_already_there(options, new_voting_option):
                 options_num = sorted(options.keys())
                 new_option_num = options_num[-1] + 1
-                options[new_option_num] = [new_voting_option, new_option_num]
+                options[new_option_num] = [new_voting_option, 0]
 
                 msg["content"] = "There is a new option in topic: " + title
                 for x in range(len(options)):
-                    # print options[x]
                     msg["content"] += "\n " + str(x) + ". " + options[x][0]
 
                 self.send_message(msg)
