@@ -86,11 +86,11 @@ class Bot():
             -send_help
             -post_error
             -new_voting_topic
+            -add_voting_option
         '''
 
         msg_content = msg["content"].lower()
-        title = msg_content.split("\n")[0].split()[1:]
-        title = " ".join(title)
+        title = self._parse_title(msg_content)
 
         if title == "help":
             self.send_help(msg)
@@ -108,12 +108,21 @@ class Bot():
                 elif regex.match(keyword):
                     self.add_vote(title.lower(), int(keyword), msg)
 
+                elif "add:" in keyword.lower():
+                    new_voting_option = keyword[4:].strip()
+                    self.add_voting_option(msg, title,
+                                           new_voting_option)
+
                 else:
                     self.send_help(msg)
             else:
                 self.post_error(msg)
         else:
             self.new_voting_topic(msg)
+
+    def _parse_title(self, msg_content):
+        title = msg_content.split("\n")[0].split()[1:]
+        return " ".join(title)
 
     def parse_private_message(self, msg):
         '''Parse private message given to the bot.
@@ -171,6 +180,34 @@ class Bot():
 
         else:
             self.send_help(msg)
+
+    def add_voting_option(self, msg, title, new_voting_option):
+        '''Add a new voting option to an existing voting topic.'''
+        print new_voting_option
+        if title.lower().strip() in self.voting_topics:
+            vote = self.voting_topics[title.lower().strip()]
+            options = vote["options"]
+
+            if self._not_already_there(options, new_voting_option):
+                options_num = sorted(options.keys())
+                new_option_num = options_num[-1] + 1
+                options[new_option_num] = [new_voting_option, new_option_num]
+
+                msg["content"] = "There is a new option in topic: " + title
+                for x in range(len(options)):
+                    # print options[x]
+                    msg["content"] += "\n " + str(x) + ". " + options[x][0]
+
+                self.send_message(msg)
+
+            else:
+                msg["content"] = new_voting_option + \
+                    " is already an option in topic: " + title + \
+                    "\nDo not attempt to repeat options!"
+                self.send_message(msg)
+
+    def _not_already_there(self, vote_options, new_voting_topic):
+        return True
 
     def add_vote(self, title, optionNumber, msg):
         '''Add a vote to an existing voting topic.'''
