@@ -1,7 +1,5 @@
 import zulip
-import json
 import requests
-import random
 import re
 import pprint
 
@@ -245,8 +243,8 @@ class Bot():
 
 
 def main():
-    zulip_username = 'zulip_newbie_bot-bot@students.hackerschool.com'
-    zulip_api_key = 'w9r2FyGMYrWaueeoooLC8qEmarIZvNT2'
+    zulip_username = 'zulip-voting-bot@students.hackerschool.com'
+    zulip_api_key = 'V9TydsQw1ybykbme8BtEWADC9WplidO0'
     key_word = 'VotingBot'
 
     subscribed_streams = []
