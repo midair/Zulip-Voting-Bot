@@ -1,6 +1,6 @@
 You look like you need some voting tips!
 
-Here is how to make a new vote:
+**Here is how to make a new vote:**
 -------------------------------
 VotingBot Title of Vote
 Voting Option 1
@@ -15,9 +15,9 @@ The Matrix
 Star Wars
 
 
-Then to vote for an option:
+**Then to vote for an option:**
 ---------------------------
-private message voting bot saying:
+**private message voting bot saying:**
 Title of Vote
 Integer_#_of_selected_option
 
@@ -25,7 +25,7 @@ eg.
 Which movie?
 2
 
-or public message:
+**or public message:**
 VotingBot Title of Vote
 Integer_#_of_selected_option
 
@@ -34,9 +34,9 @@ VotingBot Which movie?
 2
 
 
-Then to close a poll:
+**Then to close a poll:**
 ---------------------
-public message:
+**public message:**
 VotingBot Title of Vote
 results
 
@@ -44,5 +44,5 @@ eg.
 VotingBot Which movie?
 results
 _______________________
-Good luck and have fun!
+**Good luck and have fun!**
 -----------------------

@@ -1,8 +1,8 @@
 You look like you need some tips on how to vote!
 
-To vote for an option:
+**To vote for an option:**
 ----------------------
-private message voting bot saying:
+**private message voting bot saying:**
 Title of Vote
 Integer_#_of_selected_option
 
@@ -10,7 +10,7 @@ eg.
 Which movie?
 2
 
-or public message:
+**or public message:**
 VotingBot Title of Vote
 Integer_#_of_selected_option
 
