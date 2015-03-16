@@ -2,6 +2,7 @@ import zulip
 import requests
 import re
 import pprint
+import os
 
 
 class Bot():
@@ -60,7 +61,7 @@ class Bot():
         '''
         content = msg['content'].split()[0].lower().strip()
 
-        if self.key_word == content:
+        if self.key_word == content and msg["sender_email"] != self.username:
             self.parse_public_message(msg)
 
         elif msg["type"] == "private" and msg["sender_email"] != self.username:
@@ -140,11 +141,11 @@ class Bot():
 
             if len(split_msg) == 2:
                 regex = re.compile("[0-9]+")
-                optionNumber = split_msg[1].split(" ")[0]
+                option_number = split_msg[1].split(" ")[0]
 
-                if regex.match(optionNumber):
-                    optionNumber = int(optionNumber)
-                    self.add_vote(title.lower(), optionNumber, msg)
+                if regex.match(option_number):
+                    option_number = int(option_number)
+                    self.add_vote(title.lower(), option_number, msg)
 
                 else:
                     print "regex did not match"
@@ -174,7 +175,7 @@ class Bot():
 
             self.voting_topics[title.lower().strip()] = {"title": title,
                                                          "options": options_dict,
-                                                         "people_who_have_voted": []}
+                                                         "people_who_have_voted": {}}
             self.send_message(msg)
 
         else:
@@ -207,21 +208,25 @@ class Bot():
     def _not_already_there(self, vote_options, new_voting_topic):
         return True
 
-    def add_vote(self, title, optionNumber, msg):
+    def add_vote(self, title, option_number, msg):
         '''Add a vote to an existing voting topic.'''
 
         vote = self.voting_topics[title.strip()]
 
-        if optionNumber in vote["options"].keys():
+        if option_number in vote["options"].keys():
 
-            if msg["sender_email"] not in vote["people_who_have_voted"]:
-                vote["options"][optionNumber][1] += 1
-                vote["people_who_have_voted"].append(msg["sender_email"])
+            if msg["sender_email"] not in vote["people_who_have_voted"].keys():
+                vote["options"][option_number][1] += 1
+                vote["people_who_have_voted"][(msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
-                                                        optionNumber)
+                                                        option_number, False)
 
             else:
-                msg["content"] = "YOU ALREADY VOTED ONCE!"
+                vote_option_to_decrement = vote["people_who_have_voted"][msg["sender_email"]]
+                vote["options"][vote_option_to_decrement][1] -= 1
+                vote["options"][option_number][1] += 1
+                msg["content"] = self._get_add_vote_msg(msg, vote,
+                                                        option_number, True)
         else:
             msg["content"] = "That option is not in the range of the voting options. Here are your options: \n" + \
                              "\n".join([str(num) + ". " + option[0]
@@ -229,19 +234,23 @@ class Bot():
 
         self.send_message(msg)
 
-    def _get_add_vote_msg(self, msg, vote, optionNumber):
+    def _get_add_vote_msg(self, msg, vote, option_number, changed_vote):
         '''Creates a different msg if the vote was private or public.'''
 
-        option_desc = vote["options"][optionNumber][0]
+        option_desc = vote["options"][option_number][0]
 
+        if changed_vote:
+            msg_content = "You have changed your vote. \n"
+        else:
+            msg_content = ""
         if msg["type"] == "private":
-            msg = "One vote in this topic: " + vote["title"] + \
+            msg_content += "One vote in this topic: " + vote["title"] + \
                 " for this option: " + option_desc
         else:
-            msg = "You just voted for " + option_desc + \
-                " but rememeber! You can also vote privately if you want :)"
+            msg_content += "You just voted for '" + option_desc + \
+                "' but remember! You can also vote privately if you want :)"
 
-        return msg
+        return msg_content
 
     def send_help(self, msg):
         with open("help_msg.txt") as f:
@@ -282,25 +291,9 @@ class Bot():
         self.client.call_on_each_message(lambda msg: self.respond(msg))
         # print msg
 
-
-''' The Customization Part!
-
-    Create a zulip bot under "settings" on zulip.
-    Zulip will give you a username and API key
-    key_word is the text in Zulip you would like the bot to respond to. This
-    may be a single word or a phrase.
-    search_string is what you want the bot to search giphy for.
-    caption may be one of: [] OR 'a single string'
-    OR ['or a list', 'of strings']
-    subscribed_streams is a list of the streams the bot should be active on.
-    An empty list defaults to ALL zulip streams
-
-'''
-
-
 def main():
-    zulip_username = 'zulip-voting-bot@students.hackerschool.com'
-    zulip_api_key = 'V9TydsQw1ybykbme8BtEWADC9WplidO0'
+    zulip_username = 'voting-bot@students.hackerschool.com'
+    zulip_api_key = os.environ['ZULIP_API_KEY']
     key_word = 'VotingBot'
 
     subscribed_streams = []
