@@ -225,6 +225,7 @@ class Bot():
                 vote_option_to_decrement = vote["people_who_have_voted"][msg["sender_email"]]
                 vote["options"][vote_option_to_decrement][1] -= 1
                 vote["options"][option_number][1] += 1
+                vote["people_who_have_voted"][(msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, True)
         else:

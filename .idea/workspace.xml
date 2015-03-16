@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="94c7b9cf-c0f3-44cc-9ed9-2c1f15707783" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/voting_bot.py" afterPath="$PROJECT_DIR$/voting_bot.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ZulipBot.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -29,8 +30,8 @@
       <file leaf-file-name="voting_bot.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/voting_bot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.6535326" vertical-offset="3314" max-vertical-offset="4665">
-              <caret line="253" column="0" selection-start-line="253" selection-start-column="0" selection-end-line="253" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.53125" vertical-offset="3029" max-vertical-offset="4680">
+              <caret line="228" column="0" selection-start-line="228" selection-start-column="0" selection-end-line="228" selection-end-column="0" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -319,8 +320,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/voting_bot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6535326" vertical-offset="3314" max-vertical-offset="4665">
-          <caret line="253" column="0" selection-start-line="253" selection-start-column="0" selection-end-line="253" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.53125" vertical-offset="3029" max-vertical-offset="4680">
+          <caret line="228" column="0" selection-start-line="228" selection-start-column="0" selection-end-line="228" selection-end-column="0" />
           <folding>
             <element signature="e#0#12#0" expanded="true" />
           </folding>
