@@ -221,15 +221,18 @@ class Bot():
 
             if msg["sender_email"] not in vote["people_who_have_voted"]:
                 vote["options"][option_number][1] += 1
-                vote["people_who_have_voted"][(msg["sender_email"])] = option_number
+                vote["people_who_have_voted"][
+                    (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, False)
 
             else:
-                vote_option_to_decrement = vote["people_who_have_voted"][msg["sender_email"]]
+                vote_option_to_decrement = vote[
+                    "people_who_have_voted"][msg["sender_email"]]
                 vote["options"][vote_option_to_decrement][1] -= 1
                 vote["options"][option_number][1] += 1
-                vote["people_who_have_voted"][(msg["sender_email"])] = option_number
+                vote["people_who_have_voted"][
+                    (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, True)
         else:
@@ -300,10 +303,11 @@ class Bot():
         self.client.call_on_each_message(lambda msg: self.respond(msg))
         # print msg
 
+
 def main():
     zulip_username = 'voting-bot@students.hackerschool.com'
     zulip_api_key = os.environ['ZULIP_API_KEY']
-    key_word = 'VotingBotTest'
+    key_word = 'VotingBot'
 
     subscribed_streams = []
 
