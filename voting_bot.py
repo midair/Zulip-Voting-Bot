@@ -3,6 +3,7 @@ import requests
 import re
 import pprint
 import os
+from database import VotingTopics
 
 
 class Bot():
@@ -21,7 +22,7 @@ class Bot():
         self.subscribed_streams = subscribed_streams
         self.client = zulip.Client(zulip_username, zulip_api_key)
         self.subscriptions = self.subscribe_to_streams()
-        self.voting_topics = {}
+        self.voting_topics = VotingTopics()
 
     @property
     def streams(self):
@@ -189,8 +190,9 @@ class Bot():
             options = vote["options"]
 
             if self._not_already_there(options, new_voting_option):
-                options_num = sorted(options.keys())
-                new_option_num = options_num[-1] + 1
+                options_num = options.keys()
+                new_option_num = len(options_num)
+
                 options[new_option_num] = [new_voting_option, 0]
 
                 msg["content"] = "There is a new option in topic: " + title
@@ -205,6 +207,8 @@ class Bot():
                     "\nDo not attempt to repeat options!"
                 self.send_message(msg)
 
+        self.voting_topics[title.lower().strip()] = vote
+
     def _not_already_there(self, vote_options, new_voting_topic):
         return True
 
@@ -213,9 +217,9 @@ class Bot():
 
         vote = self.voting_topics[title.strip()]
 
-        if option_number in vote["options"].keys():
+        if option_number in vote["options"]:
 
-            if msg["sender_email"] not in vote["people_who_have_voted"].keys():
+            if msg["sender_email"] not in vote["people_who_have_voted"]:
                 vote["options"][option_number][1] += 1
                 vote["people_who_have_voted"][(msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
@@ -234,6 +238,8 @@ class Bot():
                                         for num, option in vote["options"].items()])
 
         self.send_message(msg)
+
+        self.voting_topics[title.strip()] = vote
 
     def _get_add_vote_msg(self, msg, vote, option_number, changed_vote):
         '''Creates a different msg if the vote was private or public.'''
@@ -285,6 +291,8 @@ class Bot():
             self.send_message(msg)
             del self.voting_topics[title]
 
+        self.voting_topics[title.lower().strip()] = vote
+
     def main(self):
         ''' Blocking call that runs forever. Calls self.respond() on every
             message received.
@@ -295,7 +303,7 @@ class Bot():
 def main():
     zulip_username = 'voting-bot@students.hackerschool.com'
     zulip_api_key = os.environ['ZULIP_API_KEY']
-    key_word = 'VotingBot'
+    key_word = 'VotingBotTest'
 
     subscribed_streams = []
 
