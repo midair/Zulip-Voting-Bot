@@ -1,2 +1,6 @@
 zulip
 requests
+dataset
+gunicorn==18.0.0
+psycopg2==2.5.2
+
