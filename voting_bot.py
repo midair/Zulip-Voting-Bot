@@ -7,12 +7,11 @@ from database import VotingTopics
 
 
 class Bot():
-
-    ''' bot takes a zulip username and api key, a word or phrase to respond to,
+    """bot takes a zulip username and api key, a word or phrase to respond to,
         a search string for giphy, an optional caption or list of captions, and
         a list of the zulip streams it should be active in. It then posts a
         caption and a randomly selected gif in response to zulip messages.
-    '''
+    """
 
     def __init__(self, zulip_username, zulip_api_key, key_word,
                  subscribed_streams=[]):
