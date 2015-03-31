@@ -287,7 +287,7 @@ class Bot():
 
             for option in vote["options"].values():
                 results += "\n{0} has {1} votes.".format(
-                    option[0].encode("utf-8"), str(option[1]))
+                    option[0].encode("utf-8", "replace"), str(option[1]))
 
             msg["content"] = results
             del self.voting_topics[title]
