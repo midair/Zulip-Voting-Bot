@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
 import zulip
 import requests
 import re
@@ -7,6 +11,7 @@ from database import VotingTopics
 
 
 class Bot():
+
     """bot takes a zulip username and api key, a word or phrase to respond to,
         a search string for giphy, an optional caption or list of captions, and
         a list of the zulip streams it should be active in. It then posts a
@@ -59,13 +64,21 @@ class Bot():
         ''' checks msg against key_word. If key_word is in msg, gets a gif url,
             picks a caption, and calls send_message()
         '''
-        content = msg['content'].split()[0].lower().strip()
 
-        if self.key_word == content and msg["sender_email"] != self.username:
-            self.parse_public_message(msg)
+        # decode if necessary
+        if type(msg["content"]) == unicode:
+            content = msg["content"]
+        else:
+            content = msg["content"].decode("utf-8", "replace")
+
+        first_word = content.split()[0].lower().strip()
+
+        # check if it's a relevant message fo the bot
+        if self.key_word == first_word and msg["sender_email"] != self.username:
+            self.parse_public_message(msg, content)
 
         elif msg["type"] == "private" and msg["sender_email"] != self.username:
-            self.parse_private_message(msg)
+            self.parse_private_message(msg, content)
 
     def send_message(self, msg):
         ''' Sends a message to zulip stream
@@ -78,7 +91,7 @@ class Bot():
 
         self.client.send_message(msg)
 
-    def parse_public_message(self, msg):
+    def parse_public_message(self, msg, content):
         '''Parse public message given to the bot.
 
         The resulting actions can be:
@@ -90,23 +103,23 @@ class Bot():
             -add_voting_option
         '''
 
-        title = self._parse_title(msg)
+        title = self._parse_title(content)
 
         if title.lower() == "help":
             self.send_help(msg)
 
-        elif title.lower() in self.voting_topics.keys():
-            split_msg = msg["content"].split("\n")
+        elif title.lower() in self.voting_topics:
+            split_msg = content.split("\n")
 
             if len(split_msg) == 2:
                 keyword = split_msg[1]
                 regex = re.compile("[0-9]+")
 
                 if keyword.lower().strip() == "results":
-                    self.send_results(msg)
+                    self.send_results(msg, content)
 
                 elif regex.match(keyword):
-                    self.add_vote(title.lower(), int(keyword), msg)
+                    self.add_vote(title.lower(), unicode(keyword), msg)
 
                 elif "add:" in keyword.lower():
                     new_voting_option = keyword[4:].strip()
@@ -116,15 +129,15 @@ class Bot():
                 else:
                     self.send_help(msg)
             else:
-                self.post_error(msg)
+                self.send_repeated_voting(msg)
         else:
-            self.new_voting_topic(msg)
+            self.new_voting_topic(msg, content)
 
-    def _parse_title(self, msg):
-        title = msg["content"].split("\n")[0].split()[1:]
+    def _parse_title(self, content):
+        title = content.split("\n")[0].split()[1:]
         return " ".join(title)
 
-    def parse_private_message(self, msg):
+    def parse_private_message(self, msg, content):
         '''Parse private message given to the bot.
 
         The resulting actions can be:
@@ -133,7 +146,7 @@ class Bot():
             -post_error
         '''
 
-        msg_content = msg["content"].lower()
+        msg_content = content.lower()
         title = msg_content.split("\n")[0]
 
         if title.strip() in self.voting_topics.keys():
@@ -157,29 +170,32 @@ class Bot():
             pprint.pprint(self.voting_topics)
             self.send_voting_help(msg)
 
-    def new_voting_topic(self, msg):
+    def new_voting_topic(self, msg, content):
         '''Create a new voting topic.'''
 
-        msg_content = msg["content"]
-        title = msg_content.split("\n")[0].split()[1:]
+        title = content.split("\n")[0].split()[1:]
         title = " ".join(title).strip()
 
-        if title:
+        print "Voting topic", title, "already?:", title.lower() in self.voting_topics
+        if title and title.lower() not in self.voting_topics:
             msg["content"] = title
-            options = msg_content.split("\n")[1:]
+            options = content.split("\n")[1:]
             options_dict = {}
 
             for x in range(len(options)):
                 options_dict[x] = [options[x], 0]
-                msg["content"] += "\n " + str(x) + ". " + options[x]
+                msg["content"] += "\n " + unicode(x) + ". " + options[x]
 
-            self.voting_topics[title.lower().strip()] = {"title": title,
-                                                         "options": options_dict,
-                                                         "people_who_have_voted": {}}
+            self.voting_topics[title.lower()] = {"title": title,
+                                                 "options": options_dict,
+                                                 "people_who_have_voted": {}}
             self.send_message(msg)
 
         else:
-            self.send_help(msg)
+            if title.lower() in self.voting_topics.keys():
+                self.send_repeated_voting(msg)
+            else:
+                self.send_help(msg)
 
     def add_voting_option(self, msg, title, new_voting_option):
         '''Add a new voting option to an existing voting topic.'''
@@ -196,7 +212,7 @@ class Bot():
 
                 msg["content"] = "There is a new option in topic: " + title
                 for x in range(len(options)):
-                    msg["content"] += "\n " + str(x) + ". " + options[x][0]
+                    msg["content"] += "\n " + unicode(x) + ". " + options[x][0]
 
                 self.send_message(msg)
 
@@ -208,13 +224,15 @@ class Bot():
 
         self.voting_topics[title.lower().strip()] = vote
 
-    def _not_already_there(self, vote_options, new_voting_topic):
-        return True
+    def _not_already_there(self, vote_options, new_voting_option):
+        options = [opt[0] for opt in vote_options.values()]
+        return not new_voting_option in options
 
     def add_vote(self, title, option_number, msg):
         '''Add a vote to an existing voting topic.'''
 
-        vote = self.voting_topics[title.strip()]
+        vote = self.voting_topics[title]
+        print vote
 
         if option_number in vote["options"]:
 
@@ -235,9 +253,15 @@ class Bot():
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, True)
         else:
-            msg["content"] = "That option is not in the range of the voting options. Here are your options: \n" + \
-                             "\n".join([str(num) + ". " + option[0]
-                                        for num, option in vote["options"].items()])
+            msg["content"] = " ".join(["That option is not in the range of the",
+                                       "voting options. Here are your options:",
+                                       " \n"])
+            options_list = []
+            for i in xrange(len(vote["options"])):
+                new_option = unicode(i) + ". " + vote["options"][unicode(i)][0]
+                options_list.append(new_option)
+
+            msg["content"] += "\n".join(options_list)
 
         self.send_message(msg)
 
@@ -266,6 +290,10 @@ class Bot():
             msg["content"] = f.read()
         self.send_message(msg)
 
+    def send_repeated_voting(self, msg):
+        msg["content"] = "This topic already exists! Choose another name."
+        self.send_message(msg)
+
     def send_voting_help(self, msg):
         with open("voting_help_msg.txt") as f:
             msg["content"] = f.read()
@@ -274,26 +302,39 @@ class Bot():
     def post_error(self, msg):
         return
 
-    def send_results(self, msg):
+    def send_results(self, msg, content):
         '''Publicly send results of voting in the thread that was used.'''
 
-        msg_content = msg["content"].lower()
+        msg_content = content.lower()
         title = msg_content.split("\n")[0].split()[1:]
         title = " ".join(title).strip()
 
         if title in self.voting_topics.keys():
+            # print title in self.voting_topics.keys(), "tigle in keys"
             vote = self.voting_topics[title]
             results = "The results are in!!!! \nTopic: " + vote["title"]
 
             for option in vote["options"].values():
                 results += "\n{0} has {1} votes.".format(
-                    option[0].encode("utf-8", "replace"), str(option[1]))
+                    option[0], unicode(option[1]))
 
             msg["content"] = results
-            del self.voting_topics[title]
+            # print "deleting"
+            self.delete_voting_topic(title.lower())
+            # print "deleted"
             self.send_message(msg)
 
         self.voting_topics[title.lower().strip()] = vote
+
+    def delete_voting_topic(self, voting_title):
+        print "deleting", voting_title
+
+        dict_params = {self.voting_topics.KEY_FIELD: unicode(voting_title)}
+
+        with self.voting_topics.db as db:
+            db[self.voting_topics.TABLE].delete(**dict_params)
+
+        print voting_title, "deleted from voting_bot.py!"
 
     def main(self):
         ''' Blocking call that runs forever. Calls self.respond() on every

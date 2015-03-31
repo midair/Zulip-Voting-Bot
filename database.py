@@ -1,5 +1,6 @@
 import dataset
 import os
+import json
 
 """
 This module handles the connection with a postgres database in a way that only
@@ -50,7 +51,6 @@ class VotingTopics(object):
 
     def __init__(self):
         self.db = self._connect_to_database()
-        self.table = self.db[self.TABLE]
 
     def _connect_to_database(self):
 
@@ -67,31 +67,36 @@ class VotingTopics(object):
 
         return db
 
+    def __iter__(self):
+        return self.iterkeys()
+
     def __getitem__(self, voting_title):
         dict_params = {self.KEY_FIELD: voting_title}
-        row = self.table.find_one(**dict_params)
 
-        if not row:
-            raise KeyError(voting_title)
+        with self.db as db:
+            row = db[self.TABLE].find_one(**dict_params)
+            if not row:
+                raise KeyError(voting_title)
 
-        str_dict_value = row[self.VALUE_FIELD]
-
-        return eval(str_dict_value)
+        return json.loads(row[self.VALUE_FIELD])
 
     def __setitem__(self, voting_title, voting_dict):
-        dict_params = {self.KEY_FIELD: voting_title,
-                       self.VALUE_FIELD: str(voting_dict)}
 
-        self.db.begin()
-        self.table.upsert(dict_params, [self.KEY_FIELD])
-        self.db.commit()
+        if voting_title not in self.keys():
+            dict_params = {self.KEY_FIELD: voting_title,
+                           self.VALUE_FIELD: json.dumps(voting_dict)}
+
+            with self.db as db:
+                db[self.TABLE].upsert(dict_params, [self.KEY_FIELD])
 
     def __delitem__(self, voting_title):
+        # print "actually deleting", voting_title
         dict_params = {self.KEY_FIELD: voting_title}
 
-        self.db.begin()
-        self.table.delete(**dict_params)
-        self.db.commit()
+        with self.db as db:
+            db[self.TABLE].delete(**dict_params)
+
+        print voting_title, "deleted!"
 
     def __contains__(self, voting_title):
 
@@ -125,22 +130,46 @@ class VotingTopics(object):
 
     # list methods
     def keys(self):
-        return [row[self.KEY_FIELD] for row in self.table.all()]
+        with self.db as db:
+            keys = [row[self.KEY_FIELD] for row in db[self.TABLE].all()]
+
+        return keys
 
     def values(self):
-        return [eval(row[self.VALUE_FIELD]) for row in self.table.all()]
+
+        with self.db as db:
+            values = [json.loads(row[self.VALUE_FIELD]) for
+                      row in db[self.TABLE].all()]
+
+        return values
 
     def items(self):
-        return [(row[self.KEY_FIELD], eval(row[self.VALUE_FIELD])) for row
-                in self.table.all()]
+
+        with self.db as db:
+            items = [(row[self.KEY_FIELD], json.loads(row[self.VALUE_FIELD]))
+                     for row in db[self.TABLE].all()]
+
+        return items
 
     # iter methods
     def iterkeys(self):
-        return (row[self.KEY_FIELD] for row in self.table.all())
+
+        with self.db as db:
+            keys_iterator = (row[self.KEY_FIELD] for
+                             row in db[self.TABLE].all())
+
+        return keys_iterator
 
     def itervalues(self):
-        return (eval(row[self.VALUE_FIELD]) for row in self.table.all())
+        with self.db as db:
+            values_iterator = (json.loads(row[self.VALUE_FIELD]) for
+                               row in db[self.TABLE].all())
+
+        return values_iterator
 
     def iteritems(self):
-        return ((row[self.KEY_FIELD], eval(row[self.VALUE_FIELD])) for row
-                in self.table.all())
+        with self.db as db:
+            items = ((row[self.KEY_FIELD], json.loads(row[self.VALUE_FIELD]))
+                     for row in db[self.TABLE].all())
+
+        return items
