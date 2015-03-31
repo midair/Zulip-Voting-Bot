@@ -227,7 +227,7 @@ class Bot():
 
     def _not_already_there(self, vote_options, new_voting_option):
         options = [opt[0] for opt in vote_options.values()]
-        return not new_voting_option in options
+        return new_voting_option not in options
 
     def add_vote(self, title, option_number, msg):
         '''Add a vote to an existing voting topic.'''
@@ -238,17 +238,17 @@ class Bot():
         if option_number in vote["options"].keys():
 
             if msg["sender_email"] not in vote["people_who_have_voted"]:
-                vote["options"][option_number][1] += 1
+                self._increment(vote["options"][option_number][1], 1)
                 vote["people_who_have_voted"][
                     (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, False)
 
             else:
-                vote_option_to_decrement = vote[
+                old_vote_option = vote[
                     "people_who_have_voted"][msg["sender_email"]]
-                vote["options"][vote_option_to_decrement][1] -= 1
-                vote["options"][option_number][1] += 1
+                self._increment(vote["options"][old_vote_option][1], -1)
+                self._increment(vote["options"][option_number][1], 1)
                 vote["people_who_have_voted"][
                     (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
@@ -269,6 +269,12 @@ class Bot():
 
         print vote
         self.voting_topics[title.strip()] = vote
+
+    def _increment(self, vote_option, num):
+
+        vote_option_num = int(vote_option)
+        vote_option_num += 1
+        vote_option = unicode(vote_option_num)
 
     def _get_add_vote_msg(self, msg, vote, option_number, changed_vote):
         '''Creates a different msg if the vote was private or public.'''
