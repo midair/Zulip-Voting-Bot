@@ -290,8 +290,8 @@ class Bot():
                     option[0], str(option[1]))
 
             msg["content"] = results
-            self.send_message(msg)
             del self.voting_topics[title]
+            self.send_message(msg)
 
         self.voting_topics[title.lower().strip()] = vote
 
