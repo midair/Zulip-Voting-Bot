@@ -145,6 +145,7 @@ class Bot():
             -add_vote
             -send_voting_help
             -post_error
+            -send_partial_results
         '''
 
         msg_content = content.lower()
@@ -161,6 +162,10 @@ class Bot():
                     option_number = int(option_number)
                     self.add_vote(title.lower(), option_number, msg)
 
+                elif split_msg[1].split(" ")[0].strip() == "results":
+                    self.send_partial_results(
+                        title.lower(), msg["sender_email"])
+
                 else:
                     print "regex did not match"
                     self.send_voting_help(msg)
@@ -171,6 +176,18 @@ class Bot():
             pprint.pprint(self.voting_topics)
             self.send_voting_help(msg)
 
+    def send_partial_results(self, title, owner_email):
+
+        if title in self.voting_topics and \
+                owner_email == self.voting_topics[title]["owner_email"]:
+
+            results = self._get_topic_results(title)
+            msg = {"type": "private",
+                   "content": results,
+                   "sender_email": owner_email}
+
+            self.send_message(msg)
+
     def new_voting_topic(self, msg, content):
         '''Create a new voting topic.'''
 
@@ -178,7 +195,15 @@ class Bot():
         title = " ".join(title).strip()
 
         print "Voting topic", title, "already?:", title.lower() in self.voting_topics
-        if title and title.lower() not in self.voting_topics:
+
+        if title.lower() in self.voting_topics:
+            self.send_repeated_voting(msg)
+
+        elif content.split("\n")[1] == "results":
+            msg["content"] = "There is no active poll with that name."
+            self.send_message(msg)
+
+        elif title:
             msg["content"] = title
             options = content.split("\n")[1:]
             options_dict = {}
@@ -189,14 +214,12 @@ class Bot():
 
             self.voting_topics[title.lower()] = {"title": title,
                                                  "options": options_dict,
-                                                 "people_who_have_voted": {}}
+                                                 "people_who_have_voted": {},
+                                                 "owner_email": msg["sender_email"]}
             self.send_message(msg)
 
         else:
-            if title.lower() in self.voting_topics.keys():
-                self.send_repeated_voting(msg)
-            else:
-                self.send_help(msg)
+            self.send_help(msg)
 
     def add_voting_option(self, msg, title, new_voting_option):
         '''Add a new voting option to an existing voting topic.'''
@@ -266,6 +289,7 @@ class Bot():
 
             msg["content"] += "\n".join(options_list)
 
+        msg["type"] = "private"
         self.send_message(msg)
 
         print vote
@@ -284,8 +308,7 @@ class Bot():
             msg_content += "One vote in this topic: " + vote["title"] + \
                 " for this option: " + option_desc
         else:
-            msg_content += "You just voted for '" + option_desc + \
-                "' but remember! You can also vote privately if you want :)"
+            msg_content += "You just voted for '" + option_desc
 
         return msg_content
 
@@ -315,20 +338,24 @@ class Bot():
 
         if title in self.voting_topics.keys():
             # print title in self.voting_topics.keys(), "tigle in keys"
-            vote = self.voting_topics[title]
-            results = "The results are in!!!! \nTopic: " + vote["title"]
 
-            for option in vote["options"].values():
-                results += "\n{0} has {1} votes.".format(
-                    option[0], unicode(option[1]))
-
-            msg["content"] = results
+            msg["content"] = self._get_topic_results(title)
             # print "deleting"
-            self.delete_voting_topic(title.lower())
+            del self.voting_topics[title.lower()]
+            # self.delete_voting_topic(title.lower())
             # print "deleted"
             self.send_message(msg)
 
-        self.voting_topics[title.lower().strip()] = vote
+    def _get_topic_results(self, title):
+
+        vote = self.voting_topics[title]
+        results = "The results are in!!!! \nTopic: " + vote["title"]
+
+        for option in vote["options"].values():
+            results += "\n{0} has {1} votes.".format(
+                option[0], unicode(option[1]))
+
+        return results
 
     def delete_voting_topic(self, voting_title):
         print "deleting", voting_title
