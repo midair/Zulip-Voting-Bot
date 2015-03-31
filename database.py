@@ -110,6 +110,11 @@ class VotingTopics(object):
     has_key = __contains__
 
     # PUBLIC methods
+    def drop_all_votings(self):
+
+        for key in self.keys():
+            del self[key]
+
     def get(self, voting_title):
 
         if voting_title not in self:
