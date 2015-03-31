@@ -78,16 +78,34 @@ class VotingTopics(object):
             if not row:
                 raise KeyError(voting_title)
 
-        return json.loads(row[self.VALUE_FIELD])
+        return self._load_json_voting(row[self.VALUE_FIELD])
+
+    def _load_json_voting(self, json_voting):
+
+        voting_dict = json.loads(json_voting)
+        # print voting_dict
+        # print voting_dict.keys()
+
+        eval_voting_dict = {u"options": {}}
+        for key in voting_dict:
+            if key != u"options":
+                eval_voting_dict[key] = voting_dict[key]
+
+        for key_opt in voting_dict[u"options"]:
+            eval_voting_dict[u"options"][
+                int(key_opt)] = voting_dict[u"options"][key_opt]
+
+        for opt in eval_voting_dict["options"].values():
+            opt[1] = int(opt[1])
+
+        return eval_voting_dict
 
     def __setitem__(self, voting_title, voting_dict):
+        dict_params = {self.KEY_FIELD: voting_title,
+                       self.VALUE_FIELD: json.dumps(voting_dict)}
 
-        if voting_title not in self.keys():
-            dict_params = {self.KEY_FIELD: voting_title,
-                           self.VALUE_FIELD: json.dumps(voting_dict)}
-
-            with self.db as db:
-                db[self.TABLE].upsert(dict_params, [self.KEY_FIELD])
+        with self.db as db:
+            db[self.TABLE].upsert(dict_params, [self.KEY_FIELD])
 
     def __delitem__(self, voting_title):
         # print "actually deleting", voting_title
@@ -138,7 +156,7 @@ class VotingTopics(object):
     def values(self):
 
         with self.db as db:
-            values = [json.loads(row[self.VALUE_FIELD]) for
+            values = [self._load_json_voting(row[self.VALUE_FIELD]) for
                       row in db[self.TABLE].all()]
 
         return values
@@ -146,7 +164,7 @@ class VotingTopics(object):
     def items(self):
 
         with self.db as db:
-            items = [(row[self.KEY_FIELD], json.loads(row[self.VALUE_FIELD]))
+            items = [(row[self.KEY_FIELD], self._load_json_voting(row[self.VALUE_FIELD]))
                      for row in db[self.TABLE].all()]
 
         return items
@@ -162,14 +180,14 @@ class VotingTopics(object):
 
     def itervalues(self):
         with self.db as db:
-            values_iterator = (json.loads(row[self.VALUE_FIELD]) for
+            values_iterator = (self._load_json_voting(row[self.VALUE_FIELD]) for
                                row in db[self.TABLE].all())
 
         return values_iterator
 
     def iteritems(self):
         with self.db as db:
-            items = ((row[self.KEY_FIELD], json.loads(row[self.VALUE_FIELD]))
+            items = ((row[self.KEY_FIELD], self._load_json_voting(row[self.VALUE_FIELD]))
                      for row in db[self.TABLE].all())
 
         return items

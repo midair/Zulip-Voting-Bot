@@ -119,7 +119,8 @@ class Bot():
                     self.send_results(msg, content)
 
                 elif regex.match(keyword):
-                    self.add_vote(title.lower(), unicode(keyword), msg)
+                    print "new vote!"
+                    self.add_vote(title.lower(), int(keyword), msg)
 
                 elif "add:" in keyword.lower():
                     new_voting_option = keyword[4:].strip()
@@ -234,7 +235,7 @@ class Bot():
         vote = self.voting_topics[title]
         print vote
 
-        if option_number in vote["options"]:
+        if option_number in vote["options"].keys():
 
             if msg["sender_email"] not in vote["people_who_have_voted"]:
                 vote["options"][option_number][1] += 1
@@ -253,18 +254,20 @@ class Bot():
                 msg["content"] = self._get_add_vote_msg(msg, vote,
                                                         option_number, True)
         else:
+            # print "option in range", type(option_number), vote["options"].keys()
             msg["content"] = " ".join(["That option is not in the range of the",
                                        "voting options. Here are your options:",
                                        " \n"])
             options_list = []
             for i in xrange(len(vote["options"])):
-                new_option = unicode(i) + ". " + vote["options"][unicode(i)][0]
+                new_option = unicode(i) + ". " + vote["options"][i][0]
                 options_list.append(new_option)
 
             msg["content"] += "\n".join(options_list)
 
         self.send_message(msg)
 
+        print vote
         self.voting_topics[title.strip()] = vote
 
     def _get_add_vote_msg(self, msg, vote, option_number, changed_vote):
