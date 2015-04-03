@@ -1,5 +1,4 @@
 You look like you need some voting tips!
-
 ---------------------------
 **Here is an example of a new vote:**
 ``` .py
@@ -8,7 +7,6 @@ Hackers
 The Matrix
 Star Wars
 ```
-
 ---------------------------
 **Then to vote for an option:**
 private message voting bot saying:
@@ -19,18 +17,17 @@ Movie night  #(`Shift+Enter` for new line)
 
 or public message:
 ``` .py
-VotingBot Movie night
+VotingBot Movie night  #(`Shift+Enter` for new line)
 2
 ```
-
 ---------------------
 **Then to close a poll:**
 public message:
 
 ``` .py
-VotingBot Movie night
+VotingBot Movie night  #(`Shift+Enter` for new line)
 results
 ```
-
-_______________________
+----------------------
 **Good luck and have fun!**
+----------------------

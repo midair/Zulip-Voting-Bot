@@ -313,7 +313,7 @@ class Bot():
         return msg_content
 
     def send_help(self, msg):
-        with open("help_msg.md") as f:
+        with open("messages/complete_help.md") as f:
             msg["content"] = f.read()
         self.send_message(msg)
 
@@ -322,7 +322,7 @@ class Bot():
         self.send_message(msg)
 
     def send_voting_help(self, msg):
-        with open("voting_help_msg.txt") as f:
+        with open("messages/voting_help.md") as f:
             msg["content"] = f.read()
         self.send_message(msg)
 
