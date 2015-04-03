@@ -308,12 +308,12 @@ class Bot():
             msg_content += "One vote in this topic: " + vote["title"] + \
                 " for this option: " + option_desc
         else:
-            msg_content += "You just voted for '" + option_desc
+            msg_content += "You just voted for '" + option_desc + "'"
 
         return msg_content
 
     def send_help(self, msg):
-        with open("help_msg.txt") as f:
+        with open("help_msg.md") as f:
             msg["content"] = f.read()
         self.send_message(msg)
 

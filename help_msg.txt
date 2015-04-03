@@ -2,17 +2,13 @@ You look like you need some voting tips!
 
 **Here is how to make a new vote:**
 -------------------------------
-VotingBot Title of Vote
-Voting Option 1
-Voting Option 2
-Voting Option 3
-etc.
 
-eg.
-VotingBot Which movie?
+**For example**
+votingbot Which movie?  #(`Shift+Enter` for new line)
 Hackers
 The Matrix
 Star Wars
+
 
 
 **Then to vote for an option:**
