@@ -8,9 +8,10 @@ import re
 import pprint
 import os
 from database import VotingTopics
+import parsley
 
 
-class Bot():
+class VotingBot():
 
     """bot takes a zulip username and api key, a word or phrase to respond to,
         a search string for giphy, an optional caption or list of captions, and
@@ -96,47 +97,77 @@ class Bot():
 
         The resulting actions can be:
             -send_results
-            -add_vote
             -send_help
-            -post_error
-            -new_voting_topic
             -add_voting_option
+            -add_vote
+            -new_voting_topic
+            -post_error
         '''
 
-        title = self._parse_title(content)
+        action, title, arg = self._parse_public_message(content)
 
-        if title.lower() == "help":
+        if action == "results":
+            print action, title, arg
+            self.send_results(msg, title)
+
+        elif action == "help":
             self.send_help(msg)
 
-        elif title.lower() in self.voting_topics:
-            split_msg = content.split("\n")
+        elif action == "option":
+            self.add_voting_option(msg, title.lower(), arg)
 
-            if len(split_msg) == 2:
-                keyword = split_msg[1]
-                regex = re.compile("[0-9]+")
+        elif action == "vote":
+            self.add_vote(msg, title.lower(), int(arg))
 
-                if keyword.lower().strip() == "results":
-                    self.send_results(msg, content)
+        elif action == "topic":
+            self.new_voting_topic(msg, title, arg)
 
-                elif regex.match(keyword):
-                    print "new vote!"
-                    self.add_vote(title.lower(), int(keyword), msg)
-
-                elif "add:" in keyword.lower():
-                    new_voting_option = keyword[4:].strip()
-                    self.add_voting_option(msg, title,
-                                           new_voting_option)
-
-                else:
-                    self.send_help(msg)
-            else:
-                self.send_repeated_voting(msg)
         else:
-            self.new_voting_topic(msg, content)
+            self.post_error(msg)
 
-    def _parse_title(self, content):
-        title = content.split("\n")[0].split()[1:]
-        return " ".join(title)
+    @classmethod
+    def _parse_public_message(cls, content):
+
+        # remove key word
+        len_key_word = len(content.split()[0])
+        user_content = content[len_key_word:]
+        user_cont_lines = user_content.split("\n")
+
+        # convert multiple lines conttent into one liner
+        if len(user_cont_lines) == 2:
+            user_content = user_content.replace("\n", ": ")
+
+        elif len(user_cont_lines) > 2:
+            options = ",".join(user_cont_lines[1:])
+            user_content = user_cont_lines[0] + ": " + options
+
+        # PEG for one liner
+        grammar = parsley.makeGrammar("""
+            not_colon = anything:x ?(':' not in x)
+            title = <not_colon+>:t ':' -> t.strip()
+
+            results = 'results' -> ("results", None)
+            option = 'add' ':'? ws <anything+>:arg  -> ("option", arg)
+            vote = <digit+>:arg -> ("vote", int(arg))
+            topic = <anything+>:arg -> ("topic", [i.strip() for i in arg.split(",")])
+            vote_act = results | option | vote | topic
+
+            help = ':'? ws 'help' -> ("help", None, None)
+            voting_msg = title:t ws vote_act:va -> (va[0], t, va[1])
+
+            expr = voting_msg | help
+            """, {})
+
+        try:
+            if "help" in user_content:
+                print "help", user_content
+            RV = grammar(user_content).expr()
+            print RV
+        except:
+            print user_content
+            RV = (None, None, None)
+
+        return RV
 
     def parse_private_message(self, msg, content):
         '''Parse private message given to the bot.
@@ -176,6 +207,12 @@ class Bot():
             pprint.pprint(self.voting_topics)
             self.send_voting_help(msg)
 
+    def send_no_voting_topic(self, msg, title):
+        pass
+
+    def post_error(self, msg):
+        pass
+
     def send_partial_results(self, title, owner_email):
 
         if title in self.voting_topics and \
@@ -188,24 +225,16 @@ class Bot():
 
             self.send_message(msg)
 
-    def new_voting_topic(self, msg, content):
+    def new_voting_topic(self, msg, title, options):
         '''Create a new voting topic.'''
-
-        title = content.split("\n")[0].split()[1:]
-        title = " ".join(title).strip()
 
         print "Voting topic", title, "already?:", title.lower() in self.voting_topics
 
         if title.lower() in self.voting_topics:
             self.send_repeated_voting(msg)
 
-        elif content.split("\n")[1] == "results":
-            msg["content"] = "There is no active poll with that name."
-            self.send_message(msg)
-
         elif title:
             msg["content"] = title
-            options = content.split("\n")[1:]
             options_dict = {}
 
             for x in range(len(options)):
@@ -252,7 +281,7 @@ class Bot():
         options = [opt[0] for opt in vote_options.values()]
         return new_voting_option not in options
 
-    def add_vote(self, title, option_number, msg):
+    def add_vote(self, msg, title, option_number):
         '''Add a vote to an existing voting topic.'''
 
         vote = self.voting_topics[title]
@@ -265,7 +294,8 @@ class Bot():
                 vote["people_who_have_voted"][
                     (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
-                                                        option_number, False)
+                                                        option_number, False,
+                                                        title)
 
             else:
                 old_vote_option = vote[
@@ -275,7 +305,8 @@ class Bot():
                 vote["people_who_have_voted"][
                     (msg["sender_email"])] = option_number
                 msg["content"] = self._get_add_vote_msg(msg, vote,
-                                                        option_number, True)
+                                                        option_number,
+                                                        True, title)
         else:
             # print "option in range", type(option_number),
             # vote["options"].keys()
@@ -295,7 +326,7 @@ class Bot():
         print vote
         self.voting_topics[title.strip()] = vote
 
-    def _get_add_vote_msg(self, msg, vote, option_number, changed_vote):
+    def _get_add_vote_msg(self, msg, vote, option_number, changed_vote, title):
         '''Creates a different msg if the vote was private or public.'''
 
         option_desc = vote["options"][option_number][0]
@@ -308,7 +339,8 @@ class Bot():
             msg_content += "One vote in this topic: " + vote["title"] + \
                 " for this option: " + option_desc
         else:
-            msg_content += "You just voted for '" + option_desc + "'"
+            msg_content += "".join(["You just voted for '",
+                                    option_desc, "' in ", title])
 
         return msg_content
 
@@ -329,21 +361,12 @@ class Bot():
     def post_error(self, msg):
         return
 
-    def send_results(self, msg, content):
+    def send_results(self, msg, title):
         '''Publicly send results of voting in the thread that was used.'''
 
-        msg_content = content.lower()
-        title = msg_content.split("\n")[0].split()[1:]
-        title = " ".join(title).strip()
-
-        if title in self.voting_topics.keys():
-            # print title in self.voting_topics.keys(), "tigle in keys"
-
+        if title.lower() in self.voting_topics:
             msg["content"] = self._get_topic_results(title)
-            # print "deleting"
             del self.voting_topics[title.lower()]
-            # self.delete_voting_topic(title.lower())
-            # print "deleted"
             self.send_message(msg)
 
     def _get_topic_results(self, title):
@@ -382,7 +405,8 @@ def main():
 
     subscribed_streams = []
 
-    new_bot = Bot(zulip_username, zulip_api_key, key_word, subscribed_streams)
+    new_bot = VotingBot(zulip_username, zulip_api_key, key_word,
+                        subscribed_streams)
     new_bot.main()
 
 if __name__ == '__main__':
