@@ -23,7 +23,7 @@ class VotingBot():
                  subscribed_streams=[]):
         self.username = zulip_username
         self.api_key = zulip_api_key
-        self.key_word = key_word.lower()
+        self.key_word = key_word.lower().strip()
         self.subscribed_streams = subscribed_streams
         self.client = zulip.Client(zulip_username, zulip_api_key)
         self.subscriptions = self.subscribe_to_streams()
@@ -141,6 +141,40 @@ class VotingBot():
             options = ",".join(user_cont_lines[1:])
             user_content = user_cont_lines[0] + ": " + options
 
+        # fix colon ":" omission in the message
+        elif len(user_cont_lines) == 1 and ":" not in user_content:
+            if "add" in user_content.lower():
+                i = user_content.lower().index("add")
+                user_content = user_content[:i - 1] + ":" + \
+                    user_content[i - 1:]
+
+            elif "results" in user_content.lower():
+                i = user_content.lower().index("results")
+                user_content = user_content[:i - 1] + ":" + \
+                    user_content[i - 1:]
+
+            elif user_content.split()[-1].isdigit():
+                words = user_content.split()
+                words[-2] += ":"
+                user_content = " ".join(words)
+
+            elif "help" in user_content.lower():
+                pass
+
+            elif "," in user_content:
+                index = user_content.index(",")
+                i = user_content.rfind(" ", 0, index)
+                user_content = user_content[:i] + ":" + \
+                    user_content[i:]
+
+            elif len(user_content.split()) > 1:
+                i = user_content.rfind(" ")
+                user_content = user_content[:i] + ":" + \
+                    user_content[i:]
+
+            else:
+                raise Exception("one liner with no colon and no fix!" + user_content)
+
         # PEG for one liner
         grammar = parsley.makeGrammar("""
             not_colon = anything:x ?(':' not in x)
@@ -159,12 +193,13 @@ class VotingBot():
             """, {})
 
         try:
-            if "help" in user_content:
-                print "help", user_content
+            # if "help" in user_content:
+            #     print "help", user_content
+            # print user_content
             RV = grammar(user_content).expr()
-            print RV
+            # print RV
         except:
-            print user_content
+            # print user_content
             RV = (None, None, None)
 
         return RV
@@ -371,7 +406,7 @@ class VotingBot():
 
     def _get_topic_results(self, title):
 
-        vote = self.voting_topics[title]
+        vote = self.voting_topics[title.lower().strip()]
         results = "The results are in!!!! \nTopic: " + vote["title"]
 
         for option in vote["options"].values():
