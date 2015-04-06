@@ -181,7 +181,7 @@ class VotingBot():
             title = <not_colon+>:t ':' -> t.strip()
 
             results = 'results' -> ("results", None)
-            option = 'add' ':'? ws <anything+>:arg  -> ("option", arg)
+            option = 'add' ':'? ws <anything+>:arg  -> ("option", arg.capitalize())
             vote = <digit+>:arg -> ("vote", int(arg))
             topic = <anything+>:arg -> ("topic", [i.strip() for i in arg.split(",")])
             vote_act = results | option | vote | topic
@@ -196,7 +196,7 @@ class VotingBot():
             # if "help" in user_content:
             #     print "help", user_content
             # print user_content
-            RV = grammar(user_content).expr()
+            RV = grammar(user_content.lower()).expr()
             # print RV
         except:
             # print user_content

@@ -49,25 +49,31 @@ class VotingBotTest(unittest.TestCase):
         # new option for existing topic
         content = "votingbot new poll\nadd: four"
         action, title, arg = self.vb._parse_public_message(content)
-        e_action, e_title, e_arg = "option", "new poll", "four"
+        e_action, e_title, e_arg = "option", "new poll", "Four"
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
                          (content, action, title, arg))
 
         content = "votingbot new poll: add: four"
         action, title, arg = self.vb._parse_public_message(content)
-        e_action, e_title, e_arg = "option", "new poll", "four"
+        e_action, e_title, e_arg = "option", "new poll", "Four"
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
                          (content, action, title, arg))
 
         content = "votingbot new poll: add four"
         action, title, arg = self.vb._parse_public_message(content)
-        e_action, e_title, e_arg = "option", "new poll", "four"
+        e_action, e_title, e_arg = "option", "new poll", "Four"
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
                          (content, action, title, arg))
 
         content = "votingbot new poll add four"
         action, title, arg = self.vb._parse_public_message(content)
-        e_action, e_title, e_arg = "option", "new poll", "four"
+        e_action, e_title, e_arg = "option", "new poll", "Four"
+        self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
+                         (content, action, title, arg))
+
+        content = "votingbot new poll ADD four"
+        action, title, arg = self.vb._parse_public_message(content)
+        e_action, e_title, e_arg = "option", "new poll", "Four"
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
                          (content, action, title, arg))
 
@@ -109,6 +115,12 @@ class VotingBotTest(unittest.TestCase):
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
                          (content, action, title, arg))
 
+        content = "votingbot new poll RESULTS"
+        action, title, arg = self.vb._parse_public_message(content)
+        e_action, e_title, e_arg = "results", "new poll", None
+        self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
+                         (content, action, title, arg))
+
         # help
         content = "votingbot\nhelp"
         action, title, arg = self.vb._parse_public_message(content)
@@ -123,6 +135,12 @@ class VotingBotTest(unittest.TestCase):
                          (content, action, title, arg))
 
         content = "votingbot help"
+        action, title, arg = self.vb._parse_public_message(content)
+        e_action, e_title, e_arg = "help", None, None
+        self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
+                         (content, action, title, arg))
+
+        content = "votingbot HELP"
         action, title, arg = self.vb._parse_public_message(content)
         e_action, e_title, e_arg = "help", None, None
         self.assertEqual((action, title, arg), (e_action, e_title, e_arg),
