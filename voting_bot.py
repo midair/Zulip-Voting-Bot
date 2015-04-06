@@ -107,10 +107,10 @@ class VotingBot():
         action, title, arg = self._parse_public_message(content)
 
         if action == "results":
-            print action, title, arg
             self.send_results(msg, title)
 
         elif action == "help":
+            msg["type"] = "private"
             self.send_help(msg)
 
         elif action == "option":

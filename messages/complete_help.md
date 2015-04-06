@@ -11,7 +11,7 @@ Star Wars
 **Then to vote for an option:**
 private message voting bot saying:
 ``` .py
-Movie night  #(`Shift+Enter` for new line)
+votingbot Movie night  #(`Shift+Enter` for new line)
 2
 ```
 
@@ -27,6 +27,28 @@ public message:
 ``` .py
 VotingBot Movie night  #(`Shift+Enter` for new line)
 results
+```
+---------------------
+**One liners**
+You can also replace `Shift+Enter` by `:`
+``` .py
+votingbot Movie night: Hackers, The Matrix, Star Wars
+```
+``` .py
+Movie night: 2
+```
+``` .py
+VotingBot Movie night: results
+```
+If you forget the colons, it's ok also
+``` .py
+votingbot Movie night Hackers, The Matrix, Star Wars
+```
+``` .py
+Movie night 2
+```
+``` .py
+VotingBot Movie night results
 ```
 ----------------------
 **Good luck and have fun!**
