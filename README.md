@@ -76,17 +76,17 @@ Let's do it tomorrow has 1 votes.
 
 Now VotingBot supports one liners! In any other command you can replace Shift-Enter by ": " so you can:
 
-VotingBot Karaoke: Go to Karaoke Bar, Go to Hopper room, Let's do it tomorrow
-VotingBot Karaoke: add: Another option
-VotingBot Karaoke: 2
-VotingBot Karaoke: results
-VotingBot: help
+*VotingBot Karaoke: Go to Karaoke Bar, Go to Hopper room, Let's do it tomorrow
+*VotingBot Karaoke: add: Another option
+*VotingBot Karaoke: 2
+*VotingBot Karaoke: results
+*VotingBot: help
 
-Even better, it's ok if you forget to put the colons
+*Even better, it's ok if you forget to put the colons*
 
-VotingBot Karaoke Go to Karaoke Bar, Go to Hopper room, Let's do it tomorrow
-VotingBot Karaoke add Another option
-VotingBot Karaoke 2
-VotingBot Karaoke results
-VotingBot help
+*VotingBot Karaoke Go to Karaoke Bar, Go to Hopper room, Let's do it tomorrow
+*VotingBot Karaoke add Another option
+*VotingBot Karaoke 2
+*VotingBot Karaoke results
+*VotingBot help
 
