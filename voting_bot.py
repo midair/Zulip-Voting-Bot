@@ -218,7 +218,7 @@ class VotingBot():
         title = msg_content.split("\n")[0]
 
         if content.lower().strip() == "help":
-            self.send_help()
+            self.send_help(msg)
 
         elif title.strip() in self.voting_topics.keys():
             split_msg = msg_content.split("\n")
